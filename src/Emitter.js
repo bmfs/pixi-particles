@@ -49,6 +49,18 @@ var Emitter = function(particleParent, particleImages, config)
 	 */
 	this.endAlpha = 1;
 	/**
+	 * The starting alpha variance of all particles.
+	 * @property {Number} startAlphaVariance
+	 * @default 1
+	 */
+	this.startAlphaVariance = 1;
+	/**
+	 * The ending alpha Variance of all particles.
+	 * @property {Number} endAlphaVariance
+	 * @default 1
+	 */
+	this.endAlphaVariance = 1;
+	/**
 	 * The starting speed of all particles.
 	 * @property {Number} startSpeed
 	 * @default 0
@@ -501,6 +513,11 @@ p.init = function(art, config)
 	}
 	else
 		this.startAlpha = this.endAlpha = 1;
+
+	//set up the alpha variance
+	this.startAlphaVariance = config.alphaVariance ? config.alphaVariance.start || 0 : 0;
+	this.endAlphaVariance = config.alphaVariance ? config.alphaVariance.end || 0 : 0;
+	
 	//set up the speed
 	if (config.speed)
 	{
@@ -535,11 +552,24 @@ p.init = function(art, config)
 	//set up the color
 	if (config.color)
 	{
-		this.startColor = ParticleUtils.hexToRGB(config.color.start);
+		if (typeof(config.color.start) == "string"){
+			this.startColor = ParticleUtils.hexToRGB(config.color.start);
+			this.startColorVariance = [0,0,0];
+		} else {
+			this.startColor = [config.color.start.r, config.color.start.g, config.color.start.b];
+			this.startColorVariance = [config.color.start.varianceRed, config.color.start.varianceGreen, config.color.start.varianceBlue];
+		}
+		
 		//if it's just one color, only use the start color
 		if (config.color.start != config.color.end)
 		{
-			this.endColor = ParticleUtils.hexToRGB(config.color.end);
+			if (typeof(config.color.end) == "string"){
+				this.endColor = ParticleUtils.hexToRGB(config.color.end);
+				this.endColorVariance = [0,0,0];
+			} else {
+				this.endColor = [config.color.end.r, config.color.end.g, config.color.end.b];
+				this.endColorVariance = [config.color.end.varianceRed, config.color.end.varianceGreen, config.color.end.varianceBlue];
+			}
 		}
 		else
 			this.endColor = null;
@@ -905,7 +935,11 @@ p.update = function(delta)
 					}
 					//set up the start and end values
 					p.startAlpha = this.startAlpha;
+					if (this.startAlphaVariance != 0) p.startAlpha += this.startAlphaVariance * (Math.random() * 2.0 - 1.0);
+
 					p.endAlpha = this.endAlpha;
+					if (this.endAlphaVariance != 0) p.endAlpha += this.endAlphaVariance * (Math.random() * 2.0 - 1.0);
+
 					if(this.minimumSpeedMultiplier != 1)
 					{
 						rand = Math.random() * (1 - this.minimumSpeedMultiplier) + this.minimumSpeedMultiplier;
@@ -931,8 +965,21 @@ p.update = function(delta)
 						p.startScale = this.startScale;
 						p.endScale = this.endScale;
 					}
-					p.startColor = this.startColor;
-					p.endColor = this.endColor;
+
+					p.startColor = this.startColor.concat();
+					if (this.startColorVariance[0] != 0) p.startColor[0] += this.startColorVariance[0] * (Math.random() * 2.0 - 1.0)*255;
+					if (this.startColorVariance[1] != 0) p.startColor[1] += this.startColorVariance[1] * (Math.random() * 2.0 - 1.0)*255;
+					if (this.startColorVariance[2] != 0) p.startColor[2] += this.startColorVariance[2] * (Math.random() * 2.0 - 1.0)*255;
+					
+					
+
+					p.endColor = this.endColor.concat();
+
+					if (this.endColorVariance[0] != 0) p.endColor[0] += this.endColorVariance[0] * (Math.random() * 2.0 - 1.0);
+					if (this.endColorVariance[1] != 0) p.endColor[1] += this.endColorVariance[1] * (Math.random() * 2.0 - 1.0);
+					if (this.endColorVariance[2] != 0) p.endColor[2] += this.endColorVariance[2] * (Math.random() * 2.0 - 1.0);
+
+
 					//randomize the rotation speed
 					if(this.minRotationSpeed == this.maxRotationSpeed)
 						p.rotationSpeed = this.minRotationSpeed;
